@@ -23,14 +23,9 @@ jobs:
         run: |
           sudo debootstrap --arch=amd64 noble ./chroot http://archive.ubuntu.com/ubuntu/
           
-          # Fix repository configuration inside chroot
-          sudo mount --bind /dev ./chroot/dev
-          sudo mount --bind /proc ./chroot/proc
-          sudo mount --bind /sys ./chroot/sys
-          
-          # Install Python & networking utilities inside chroot
+          # Install basic Python3 and network ping tool
           sudo chroot ./chroot apt-get update
-          sudo chroot ./chroot apt-get install -y python3 python3-pip iputils-ping net-tools python3-pymysql
+          sudo chroot ./chroot apt-get install -y python3 iputils-ping
 
           # Inject Custom Branding
           [ -f "assets/os-release" ] && sudo cp assets/os-release ./chroot/etc/os-release
@@ -44,11 +39,6 @@ jobs:
             # Configure auto-run on first boot
             echo "python3 /usr/local/bin/infra-setup" | sudo tee -a ./chroot/etc/profile
           fi
-
-          # Unmount virtual filesystems
-          sudo umount ./chroot/dev
-          sudo umount ./chroot/proc
-          sudo umount ./chroot/sys
 
       - name: Package ISO
         run: |
