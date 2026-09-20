@@ -1,0 +1,24 @@
+#!/bin/bash
+# Custom command for InfraOS product key verification
+
+KEY_FILE="/etc/infraos/.license_key"
+
+echo "=== InfraOS V1.0.0.0 License Manager ==="
+
+if [ -f "$KEY_FILE" ]; then
+    echo "Status: ACTIVATED"
+    echo "Product Key: $(cat $KEY_FILE)"
+else
+    echo "Status: UNREGISTERED"
+    read -p "Please enter your product key: " input_key
+
+    # Basic validation check (replace with remote validation server if needed)
+    if [[ "$input_key" =~ ^INFRA-[0-9]{4}-[A-Z0-9]{4}$ ]]; then
+        sudo mkdir -p /etc/infraos
+        echo "$input_key" | sudo tee $KEY_FILE > /dev/null
+        echo "Success: InfraOS V1.0.0.0 activated successfully!"
+    else
+        echo "Error: Invalid key format. Format should be INFRA-XXXX-XXXX"
+        exit 1
+    fi
+fi
