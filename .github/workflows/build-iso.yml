@@ -45,20 +45,20 @@ jobs:
             chmod +x extracted/usr/local/bin/infra-key
           fi
 
-      - name: Build InfraOS Bootable ISO
+      - name: Build Bootable ISO
         run: |
           mkdir -p iso-out
-          xorriso -as mkisofs \
-            -r -V "INFRAOS_V1" \
-            -J -joliet-long \
-            -b boot/grub/i386-pc/eltorito.img \
-            -c boot.catalog \
-            -no-emul-boot -boot-load-size 4 -boot-info-table \
-            -o iso-out/InfraOS-v1.0.0.0-amd64.iso extracted/
+          xorriso -indev ubuntu-base.iso \
+            -outdev iso-out/InfraOS-v1.0.0.0-amd64.iso \
+            -blank as_needed \
+            -map extracted/ / \
+            -boot_image any replay \
+            -padding included
 
       - name: Upload ISO as Workflow Artifact
         uses: actions/upload-artifact@v4
         with:
           name: InfraOS-v1.0.0.0-ISO
           path: iso-out/InfraOS-v1.0.0.0-amd64.iso
+          retention-days: 7          path: iso-out/InfraOS-v1.0.0.0-amd64.iso
           retention-days: 7
