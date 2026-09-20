@@ -21,7 +21,6 @@ jobs:
 
       - name: Download Base Ubuntu Server ISO
         run: |
-          echo "Downloading official Ubuntu 24.04 ISO..."
           curl -L -o ubuntu-base.iso "https://releases.ubuntu.com/24.04/ubuntu-24.04-live-server-amd64.iso"
 
       - name: Extract ISO
@@ -32,14 +31,8 @@ jobs:
 
       - name: Inject Custom InfraOS Branding
         run: |
-          if [ -f "assets/os-release" ]; then
-            cp assets/os-release extracted/etc/os-release
-          fi
-
-          if [ -f "assets/issue" ]; then
-            cp assets/issue extracted/etc/issue
-          fi
-
+          [ -f "assets/os-release" ] && cp assets/os-release extracted/etc/os-release
+          [ -f "assets/issue" ] && cp assets/issue extracted/etc/issue
           if [ -f "assets/infra-key" ]; then
             cp assets/infra-key extracted/usr/local/bin/infra-key
             chmod +x extracted/usr/local/bin/infra-key
@@ -48,17 +41,10 @@ jobs:
       - name: Build Bootable ISO
         run: |
           mkdir -p iso-out
-          xorriso -indev ubuntu-base.iso \
-            -outdev iso-out/InfraOS-v1.0.0.0-amd64.iso \
-            -blank as_needed \
-            -map extracted/ / \
-            -boot_image any replay \
-            -padding included
+          xorriso -indev ubuntu-base.iso -outdev iso-out/InfraOS-v1.0.0.0-amd64.iso -blank as_needed -map extracted/ / -boot_image any replay -padding included
 
       - name: Upload ISO as Workflow Artifact
         uses: actions/upload-artifact@v4
         with:
           name: InfraOS-v1.0.0.0-ISO
           path: iso-out/InfraOS-v1.0.0.0-amd64.iso
-          retention-days: 7          retention-days: 7          path: iso-out/InfraOS-v1.0.0.0-amd64.iso
-          retention-days: 7
