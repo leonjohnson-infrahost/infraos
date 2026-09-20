@@ -23,9 +23,9 @@ jobs:
         run: |
           sudo debootstrap --arch=amd64 noble ./chroot http://archive.ubuntu.com/ubuntu/
           
-          # Install basic Python3 and network ping tool
+          # Install basic Python3, kernel, and systemd
           sudo chroot ./chroot apt-get update
-          sudo chroot ./chroot apt-get install -y python3 iputils-ping
+          sudo chroot ./chroot apt-get install -y python3 iputils-ping linux-image-generic initramfs-tools systemd-sysv
 
           # Inject Custom Branding
           [ -f "assets/os-release" ] && sudo cp assets/os-release ./chroot/etc/os-release
@@ -40,10 +40,30 @@ jobs:
             echo "python3 /usr/local/bin/infra-setup" | sudo tee -a ./chroot/etc/profile
           fi
 
+      - name: Prepare Boot Loader Configuration
+        run: |
+          mkdir -p image/boot/grub
+          mkdir -p image/live
+          
+          # Copy Linux Kernel & Initrd to Boot Folder
+          sudo cp ./chroot/boot/vmlinuz* image/boot/vmlinuz
+          sudo cp ./chroot/boot/initrd.img* image/boot/initrd.img
+          sudo mksquashfs ./chroot image/live/filesystem.squashfs -e boot
+
+          # Create Bootable GRUB Config
+          cat << 'EOF' > image/boot/grub/grub.cfg
+          set default=0
+          set timeout=3
+
+          menuentry "Boot InfraOS V1.0.0.0" {
+              linux /boot/vmlinuz boot=live quiet splash
+              initrd /boot/initrd.img
+          }
+          EOF
+
       - name: Package ISO
         run: |
-          mkdir -p image/live iso-out
-          sudo mksquashfs ./chroot image/live/filesystem.squashfs -e boot
+          mkdir -p iso-out
           sudo grub-mkrescue -o iso-out/InfraOS-v1.0.0.0-amd64.iso image/
 
       - name: Upload ISO Artifact
