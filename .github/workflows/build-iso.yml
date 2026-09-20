@@ -23,24 +23,27 @@ jobs:
         run: |
           sudo debootstrap --arch=amd64 noble ./chroot http://archive.ubuntu.com/ubuntu/
           
+          # Install Python & networking utilities inside chroot
+          sudo chroot ./chroot apt-get update
+          sudo chroot ./chroot apt-get install -y python3 python3-pip iputils-ping net-tools python3-mysql.connector
+
           # Inject Custom Branding
-          if [ -f "assets/os-release" ]; then
-            sudo cp assets/os-release ./chroot/etc/os-release
-          fi
-          if [ -f "assets/issue" ]; then
-            sudo cp assets/issue ./chroot/etc/issue
-          fi
-          if [ -f "assets/infra-key" ]; then
-            sudo cp assets/infra-key ./chroot/usr/local/bin/infra-key
-            sudo chmod +x ./chroot/usr/local/bin/infra-key
+          [ -f "assets/os-release" ] && sudo cp assets/os-release ./chroot/etc/os-release
+          [ -f "assets/issue" ] && sudo cp assets/issue ./chroot/etc/issue
+          
+          # Inject Custom Wizard Script
+          if [ -f "assets/infra-setup" ]; then
+            sudo cp assets/infra-setup ./chroot/usr/local/bin/infra-setup
+            sudo chmod +x ./chroot/usr/local/bin/infra-setup
+            
+            # Configure auto-run on first boot
+            echo "python3 /usr/local/bin/infra-setup" | sudo tee -a ./chroot/etc/profile
           fi
 
       - name: Package ISO
         run: |
           mkdir -p image/live iso-out
           sudo mksquashfs ./chroot image/live/filesystem.squashfs -e boot
-          
-          # Create bootable ISO structure
           sudo grub-mkrescue -o iso-out/InfraOS-v1.0.0.0-amd64.iso image/
 
       - name: Upload ISO Artifact
