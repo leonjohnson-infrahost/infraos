@@ -14,36 +14,36 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Building Tools
+      - name: Install Build Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y xorriso squashfs-tools
+          sudo apt-get install -y debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools
 
-      - name: Download Base Ubuntu Server ISO
+      - name: Build Clean InfraOS Filesystem
         run: |
-          curl -L -o ubuntu-base.iso "https://releases.ubuntu.com/24.04/ubuntu-24.04-live-server-amd64.iso"
-
-      - name: Extract ISO
-        run: |
-          mkdir -p extracted
-          xorriso -osirrox on -indev ubuntu-base.iso -extract / extracted
-          chmod -R +w extracted
-
-      - name: Inject Custom InfraOS Branding
-        run: |
-          [ -f "assets/os-release" ] && cp assets/os-release extracted/etc/os-release
-          [ -f "assets/issue" ] && cp assets/issue extracted/etc/issue
+          sudo debootstrap --arch=amd64 noble ./chroot http://archive.ubuntu.com/ubuntu/
+          
+          # Inject Custom Branding
+          if [ -f "assets/os-release" ]; then
+            sudo cp assets/os-release ./chroot/etc/os-release
+          fi
+          if [ -f "assets/issue" ]; then
+            sudo cp assets/issue ./chroot/etc/issue
+          fi
           if [ -f "assets/infra-key" ]; then
-            cp assets/infra-key extracted/usr/local/bin/infra-key
-            chmod +x extracted/usr/local/bin/infra-key
+            sudo cp assets/infra-key ./chroot/usr/local/bin/infra-key
+            sudo chmod +x ./chroot/usr/local/bin/infra-key
           fi
 
-      - name: Build Bootable ISO
+      - name: Package ISO
         run: |
-          mkdir -p iso-out
-          xorriso -indev ubuntu-base.iso -outdev iso-out/InfraOS-v1.0.0.0-amd64.iso -blank as_needed -map extracted/ / -boot_image any replay -padding included
+          mkdir -p image/live iso-out
+          sudo mksquashfs ./chroot image/live/filesystem.squashfs -e boot
+          
+          # Create bootable ISO structure
+          sudo grub-mkrescue -o iso-out/InfraOS-v1.0.0.0-amd64.iso image/
 
-      - name: Upload ISO as Workflow Artifact
+      - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
         with:
           name: InfraOS-v1.0.0.0-ISO
