@@ -60,5 +60,5 @@ jobs:
         with:
           name: InfraOS-v1.0.0.0-ISO
           path: iso-out/InfraOS-v1.0.0.0-amd64.iso
-          retention-days: 7          path: iso-out/InfraOS-v1.0.0.0-amd64.iso
+          retention-days: 7          retention-days: 7          path: iso-out/InfraOS-v1.0.0.0-amd64.iso
           retention-days: 7
