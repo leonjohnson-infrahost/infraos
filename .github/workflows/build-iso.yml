@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo debootstrap --arch=amd64 noble ./chroot http://archive.ubuntu.com/ubuntu/
           
-          # Install basic Python3, kernel, and systemd
+          # Install Python3, kernel, and systemd
           sudo chroot ./chroot apt-get update
           sudo chroot ./chroot apt-get install -y python3 iputils-ping linux-image-generic initramfs-tools systemd-sysv
 
@@ -45,12 +45,16 @@ jobs:
           mkdir -p image/boot/grub
           mkdir -p image/live
           
-          # Copy Linux Kernel & Initrd to Boot Folder
-          sudo cp ./chroot/boot/vmlinuz* image/boot/vmlinuz
-          sudo cp ./chroot/boot/initrd.img* image/boot/initrd.img
+          # Safely locate and copy kernel and initrd
+          KERNEL_FILE=$(sudo find ./chroot/boot/ -name "vmlinuz-*" | head -n 1)
+          INITRD_FILE=$(sudo find ./chroot/boot/ -name "initrd.img-*" | head -n 1)
+          
+          sudo cp "$KERNEL_FILE" image/boot/vmlinuz
+          sudo cp "$INITRD_FILE" image/boot/initrd.img
+          
           sudo mksquashfs ./chroot image/live/filesystem.squashfs -e boot
 
-          # Create Bootable GRUB Config
+          # Create GRUB Config
           cat << 'EOF' > image/boot/grub/grub.cfg
           set default=0
           set timeout=3
