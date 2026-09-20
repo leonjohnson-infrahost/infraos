@@ -1,0 +1,34 @@
+#!/bin/bash
+# First-boot setup wizard for InfraOS
+
+MARKER="/etc/infraos/.setup_completed"
+
+if [ ! -f "$MARKER" ]; then
+    clear
+    echo "=================================================="
+    echo "          Welcome to InfraOS V1.0.0.0             "
+    echo "               Initial Configuration              "
+    echo "=================================================="
+    echo ""
+
+    # 1. Product Key Verification
+    /usr/local/bin/infra-key
+    if [ $? -ne 0 ]; then
+        echo "Activation required to complete installation."
+        exit 1
+    fi
+
+    # 2. Set Hostname
+    read -p "Enter System Hostname [default: InfraHost]: " sys_hostname
+    sys_hostname=${sys_hostname:-InfraHost}
+    hostnamectl set-hostname "$sys_hostname"
+
+    # 3. Set Root/Admin Password
+    echo "Set Administrator Password:"
+    passwd
+
+    # Mark setup as completed so it doesn't run again
+    mkdir -p /etc/infraos
+    touch "$MARKER"
+    echo "Setup Complete! Welcome to InfraOS."
+fi
